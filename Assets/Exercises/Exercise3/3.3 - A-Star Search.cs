@@ -16,7 +16,43 @@ namespace AfGD.Execise3
         //
         public static void Execute(Graph graph, Node startPoint, Node endPoint, Dictionary<Node, Node> cameFrom)
         {
-            throw new NotImplementedException("Implement A* search algorithm here.");
+            var frontier = new PriorityQueue<Node>();
+            frontier.Enqueue(startPoint, 0f);
+
+            var costSoFar = new Dictionary<Node, float>();
+            costSoFar.Add(startPoint, 0f);
+
+            cameFrom.Add(startPoint, null);
+
+            var neighbours = new List<Node>(10);
+
+            while (frontier.Count > 0)
+            {
+                var current = frontier.Dequeue();
+
+                if (current == endPoint)
+                    break;
+
+                graph.GetNeighbours(current, neighbours);
+                foreach (var next in neighbours)
+                {
+                    var newCost = costSoFar[current] + graph.GetCost(current, next);
+
+                    if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
+                    {
+                        costSoFar[next] = newCost;
+                        var priority = newCost + Heuristic(endPoint, next);
+                        frontier.Enqueue(next, priority);
+                        cameFrom[next] = current;
+                    }
+                }
+            }
+        }
+
+        static float Heuristic(Node from, Node to)
+        {
+            var fromTo = to.Position - from.Position;
+            return (float)Math.Sqrt(fromTo.x * fromTo.x + fromTo.y * fromTo.y);
         }
     }
 }

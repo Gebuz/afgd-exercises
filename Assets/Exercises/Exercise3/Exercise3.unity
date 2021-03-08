@@ -329,7 +329,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Graph: {fileID: 11400000, guid: 5d353a3845f0a7540bf5c303e04a844a, type: 2}
-  m_Algorithm: 0
+  m_Algorithm: 2
   m_Start: {x: 9.11, y: 0, z: 2.86}
   m_End: {x: 4.09, y: 0, z: 6.21}
 --- !u!4 &975283660

@@ -32,6 +32,31 @@ namespace AfGD.Assignment1
         // of the path we have found.
         List<Vector3> m_Path = new List<Vector3>();
 
+        public List<Vector3> GetPath ()
+        {
+
+            // Clear state of previous run
+            m_Path.Clear();
+            m_Graph.Clear();
+
+            // Convert start and end locations to nodes in the graph
+            var start = m_Graph.GetClosestNodeToPoint(m_Start);
+            var goal = m_Graph.GetClosestNodeToPoint(m_End);
+
+
+            // Create a dictionairy to keep track of how we 
+            // discovered a node.
+            var cameFrom = new Dictionary<Node, Node>();
+
+            // Execute the algorithm we have selected.
+            AStarSearch.Execute(m_Graph, start, goal, cameFrom);
+
+
+            // Reconstruct Path
+            ReconstructPath(cameFrom, start, goal, m_Path);
+            return this.m_Path;
+        }
+
         public void Run()
         {
             if (m_Graph == null)

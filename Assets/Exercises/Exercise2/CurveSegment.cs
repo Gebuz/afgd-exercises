@@ -22,25 +22,25 @@ namespace AfGD
             // replace the matrices below with their respective coefficients
             // mind that each Vector4 is actuall a COLUMN in the matrix, and NOT A ROW
                 new Matrix4x4(// Hermite
-                    new Vector4( 1, 0, 0, 0),  // column 0
-                    new Vector4( 0, 1, 0, 0),  // column 1
-                    new Vector4( 0, 0, 1, 0),  // column 2
-                    new Vector4( 0, 0, 0, 1)), // column 3
+                    new Vector4( 2, 1, 1,-2),  // column 0
+                    new Vector4(-3,-2,-1, 3),  // column 1
+                    new Vector4( 0, 1, 0, 0),  // column 2
+                    new Vector4( 1, 0, 0, 0)), // column 3
                 new Matrix4x4(// CatmullRom
-                    new Vector4( 1, 0, 0, 0)/2.0f,  // column 0
-                    new Vector4( 0, 1, 0, 0)/2.0f,  // column 1
-                    new Vector4( 0, 0, 1, 0)/2.0f,  // column 2
-                    new Vector4( 0, 0, 0, 1)/2.0f), // column 3
+                    new Vector4(-1, 3,-3, 1)/2.0f,  // column 0
+                    new Vector4( 2,-5, 4,-1)/2.0f,  // column 1
+                    new Vector4(-1, 0, 1, 0)/2.0f,  // column 2
+                    new Vector4( 0, 2, 0, 0)/2.0f), // column 3
                 new Matrix4x4(// Bezier
-                    new Vector4( 1, 0, 0, 0),  // column 0
-                    new Vector4( 0, 1, 0, 0),  // column 1
-                    new Vector4( 0, 0, 1, 0),  // column 2
-                    new Vector4( 0, 0, 0, 1)), // column 3
+                    new Vector4(-1, 3,-3, 1),  // column 0
+                    new Vector4( 3,-6, 3, 0),  // column 1
+                    new Vector4(-3, 3, 0, 0),  // column 2
+                    new Vector4( 1, 0, 0, 0)), // column 3
                 new Matrix4x4(// B-spline
-                    new Vector4( 1, 0, 0, 0)/6.0f,  // column 0
-                    new Vector4( 0, 1, 0, 0)/6.0f,  // column 1
-                    new Vector4( 0, 0, 1, 0)/6.0f,  // column 2
-                    new Vector4( 0, 0, 0, 1)/6.0f), // column 3
+                    new Vector4(-1, 3,-3, 1)/6.0f,  // column 0
+                    new Vector4( 3,-6, 3, 0)/6.0f,  // column 1
+                    new Vector4(-3, 0, 3, 0)/6.0f,  // column 2
+                    new Vector4( 1, 4, 1, 0)/6.0f), // column 3
                 };
 
         /// <summary>
@@ -104,7 +104,8 @@ namespace AfGD
             //     [ cv1.x cv2.y cv3.z cv4.y]  // row 1
             //     [ cv1.x cv2.y cv3.z cv4.z]  // row 2
             //     [   unnused    unnused   ]  // row 3
-            B = Matrix4x4.identity; // replace Matrix4x4.identity
+            // B = Matrix4x4.identity; // replace Matrix4x4.identity
+            B = new Matrix4x4(cv1, cv2, cv3, cv4);
 
             // we work with the matrix shapes:
             //  B     M     U    
@@ -120,8 +121,10 @@ namespace AfGD
         {
             // TODO 2.1 exercise
             // compute parameter matrix U and evaluate p at u
-            Vector4 U = Vector4.zero; // replace Vector4.zero
-            Vector4 p = Vector4.zero; // replace Vector4.zero
+            // Vector4 U = Vector4.zero; // replace Vector4.zero
+            // Vector4 p = Vector4.zero; // replace Vector4.zero
+            Vector4 U = new Vector4(u * u * u, u * u, u, 1.0f);
+            Vector4 p = B * M * U;
             return p;
         }
 
@@ -135,8 +138,10 @@ namespace AfGD
             // TODO 2.1 exercise 
             // compute parameter matrix U and evaluate p at u
             // you should compute the first derivative of U
-            Vector4 U = Vector4.zero; // replace Vector4.zero
-            Vector4 p = Vector4.zero; // replace Vector4.zero
+            // Vector4 U = Vector4.zero; // replace Vector4.zero
+            // Vector4 p = Vector4.zero; // replace Vector4.zero
+            Vector4 U = new Vector4(u * u * 3, u * 2, 1, 0);
+            Vector4 p = B * M * U;
             return p;
         }
 
@@ -150,8 +155,10 @@ namespace AfGD
             // TODO 2.1 exercise 
             // compute parameter matrix U and evaluate p at u
             // you should compute the second derivative of U
-            Vector4 U = Vector4.zero; // replace Vector4.zero
-            Vector4 p = Vector4.zero; // replace Vector4.zero
+            // Vector4 U = Vector4.zero; // replace Vector4.zero
+            // Vector4 p = Vector4.zero; // replace Vector4.zero
+            Vector4 U = new Vector4(u * 6, 2, 0, 0);
+            Vector4 p = B * M * U;
             return p;
         }
 
