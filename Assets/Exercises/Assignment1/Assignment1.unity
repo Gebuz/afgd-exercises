@@ -199,7 +199,7 @@ MonoBehaviour:
   - {x: 26.7, y: 0, z: 2.8}
   - {x: 30, y: 0, z: 10.2}
   pathFinder: {fileID: 183150166}
-  curveType: 1
+  curveType: 0
   debugSegments: 20
   drawPath: 1
   pathColor: {r: 1, g: 0, b: 1, a: 1}

@@ -336,13 +336,13 @@ namespace AfGD
             Init();
         }
 
-        /*
         private void Update()
         {
             if (Application.isEditor)
             {
                 if (!UpdateControlPoints())
                     return;
+                Init();
             }
 
             for (int i = 0; i < curves.Length; i++)
@@ -355,6 +355,5 @@ namespace AfGD
                     DrawCurveCurvatures(curves[i], curvatureColor, debugSegments);
             }
         }
-        */
     }
 }
