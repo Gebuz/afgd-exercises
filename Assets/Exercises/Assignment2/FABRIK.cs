@@ -32,13 +32,32 @@ namespace AfGD.Assignment2
         // total length of the system
         private float chainLength;
 
-        private void rotateLink(int i)
+        private void RotateLink(int i)
         {
-            Vector3 a = (joints[i + 1].position - joints[i].position);
-            joints[i].rotation = Quaternion.LookRotation(a, Vector3.up);
+            joints[i].rotation = Quaternion.LookRotation(joints[i + 1].position - joints[i].position, Vector3.up);
             joints[i].Rotate(new Vector3(0, -90, 0), Space.Self);
         }
 
+        private Vector3 JointLimit(Vector3 pp, Vector3 p, Vector3 pn)
+        {
+            float t = rotationLimit * Mathf.Deg2Rad;
+            Vector3 l = p - pp;
+            Vector3 ln = pn - p;
+            if (Vector3.Angle(l, ln) < rotationLimit)
+            { // if the angle(l, ln) < limit return early
+                return pn;
+            }
+            Vector3 o = Vector3.Project(ln, l);
+            if (Vector3.Dot(o, l) < 0 && rotationLimit < 90)
+            { // if the angle(l, ln) > 90 degrees reflect (unless limit is also above 90)
+                o = -o;
+                ln = Vector3.Reflect(ln, l);
+            }
+            Vector3 po = p + o;
+            Vector3 d = pn - po / (pn - po).magnitude;
+            float r = Mathf.Abs(o.magnitude * Mathf.Tan(t));
+            return po + r * d;
+        }
 
         private void Solve()
         {
@@ -47,17 +66,17 @@ namespace AfGD.Assignment2
             { // target is unreachable
                 for (int i = 0; i + 1 < joints.Length; i++)
                 {
-                    var pos = joints[i].position;
+                    Vector3 pos = joints[i].position;
                     float dist = (target.position - pos).magnitude;
                     float lambda = distances[i] / dist;
                     joints[i + 1].position = (1 - lambda) * pos + lambda * target.position;
 
-                    rotateLink(i);                    
+                    RotateLink(i);                    
                 }
             } else
             { // target is reachable
-                var b = joints[0].position;
-                var n = joints.Length - 1;
+                Vector3 b = joints[0].position;
+                int n = joints.Length - 1;
                 float dif = (joints[n].position - target.position).magnitude;
                 int iterations = 0;
                 while (dif > tolerance)
@@ -66,26 +85,38 @@ namespace AfGD.Assignment2
                     joints[n].position = target.position;
                     for (int i = n - 1; i >= 0; i--)
                     {
-                        var pos = joints[i].position;
-                        var pos1 = joints[i + 1].position;
+                        // joint limit
+                        if (i >= 2)
+                        {
+                            joints[i].position = JointLimit(joints[i - 2].position, joints[i - 1].position, joints[i].position);
+                        }
+
+                        Vector3 pos = joints[i].position;
+                        Vector3 pos1 = joints[i + 1].position;
                         float dist = (pos1 - pos).magnitude;
                         float lambda = distances[i] / dist;
                         joints[i].position = (1 - lambda) * pos1 + lambda * pos;
 
-                        rotateLink(i);
+                        RotateLink(i);
                     }
 
                     //Backward reaching
                     joints[0].position = b;
                     for(int i = 0; i < n; i++)
                     {
-                        var pos = joints[i].position;
-                        var pos1 = joints[i + 1].position;
+                        // joint limit
+                        if (i >= 1)
+                        {
+                            joints[i + 1].position = JointLimit(joints[i - 1].position, joints[i].position, joints[i + 1].position);
+                        }
+
+                        Vector3 pos = joints[i].position;
+                        Vector3 pos1 = joints[i + 1].position;
                         float dist = (pos1 - pos).magnitude;
                         float lambda = distances[i] / dist;
                         joints[i + 1].position = (1 - lambda) * pos + lambda * pos1;
 
-                        rotateLink(i);
+                        RotateLink(i);
                     }
 
                     dif = (joints[n].position - target.position).magnitude;
