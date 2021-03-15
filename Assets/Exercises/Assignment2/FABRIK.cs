@@ -32,12 +32,69 @@ namespace AfGD.Assignment2
         // total length of the system
         private float chainLength;
 
+        private void rotateLink(int i)
+        {
+            Vector3 a = (joints[i + 1].position - joints[i].position);
+            joints[i].rotation = Quaternion.LookRotation(a, Vector3.up);
+            joints[i].Rotate(new Vector3(0, -90, 0), Space.Self);
+        }
+
 
         private void Solve()
         {
-            // TODO: YOUR IMPLEMENTATION HERE
-            // FEEL FREE TO CREATE HELPER FUNCTIONS
+            float targetDistance = (target.position - joints[0].position).magnitude;
+            if (targetDistance > chainLength)
+            { // target is unreachable
+                for (int i = 0; i + 1 < joints.Length; i++)
+                {
+                    var pos = joints[i].position;
+                    float dist = (target.position - pos).magnitude;
+                    float lambda = distances[i] / dist;
+                    joints[i + 1].position = (1 - lambda) * pos + lambda * target.position;
 
+                    rotateLink(i);                    
+                }
+            } else
+            { // target is reachable
+                var b = joints[0].position;
+                var n = joints.Length - 1;
+                float dif = (joints[n].position - target.position).magnitude;
+                int iterations = 0;
+                while (dif > tolerance)
+                {
+                    // Forward reaching
+                    joints[n].position = target.position;
+                    for (int i = n - 1; i >= 0; i--)
+                    {
+                        var pos = joints[i].position;
+                        var pos1 = joints[i + 1].position;
+                        float dist = (pos1 - pos).magnitude;
+                        float lambda = distances[i] / dist;
+                        joints[i].position = (1 - lambda) * pos1 + lambda * pos;
+
+                        rotateLink(i);
+                    }
+
+                    //Backward reaching
+                    joints[0].position = b;
+                    for(int i = 0; i < n; i++)
+                    {
+                        var pos = joints[i].position;
+                        var pos1 = joints[i + 1].position;
+                        float dist = (pos1 - pos).magnitude;
+                        float lambda = distances[i] / dist;
+                        joints[i + 1].position = (1 - lambda) * pos + lambda * pos1;
+
+                        rotateLink(i);
+                    }
+
+                    dif = (joints[n].position - target.position).magnitude;
+
+                    // stop after X iterations
+                    iterations++;
+                    if (iterations >= maxIterations) break;
+                }
+            }
         }
 
         // Start is called before the first frame update
