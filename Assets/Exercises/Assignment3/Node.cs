@@ -92,12 +92,21 @@ namespace AfGD.Assignment3
         {
 #if SOLUTION_3_1
             // Randomly choose an axis to split on
+            m_SplitAxis = (Random.Range(0f, 1f) > 0.5f) ? Axis.X : Axis.Z;
 
             // Partition the Cell into two cells; cellA & cellB.
+            Vector3 size = new Vector3(m_Cell.size.x / (m_SplitAxis == Axis.Z ? 2 : 1), m_Cell.size.y, m_Cell.size.z / (m_SplitAxis == Axis.X ? 2 : 1));
+            Vector3 centerA = new Vector3(m_Cell.center.x + (m_SplitAxis == Axis.Z ? m_Cell.extents.x / 2 : 0), m_Cell.center.y, m_Cell.center.z + (m_SplitAxis == Axis.X ? m_Cell.extents.z / 2 : 0));
+            Vector3 centerB = new Vector3(m_Cell.center.x - (m_SplitAxis == Axis.Z ? m_Cell.extents.x / 2 : 0), m_Cell.center.y, m_Cell.center.z - (m_SplitAxis == Axis.X ? m_Cell.extents.z / 2 : 0));
+            Node cellA = new Node(new Bounds(centerA, size));
+            Node cellB = new Node(new Bounds(centerB, size));
 
             // Only if we can split into two valid cells do we actually proceed with the split
-            // m_ChildA = ...;
-            // m_ChildB = ...;
+            if (!cellA.IsValidCell() || !cellB.IsValidCell())
+                return;
+
+            m_ChildA = cellA;
+            m_ChildB = cellB;
 
 #endif
 
@@ -124,8 +133,18 @@ namespace AfGD.Assignment3
         {
 #if SOLUTION_3_2
             // Randomly generate bounds for the room
+            float edgeBuffer = 1f;
+            float centerBuffer = 2f;
 
-            // m_Room = ... (todo)
+            float topX = Random.Range(centerBuffer, m_Cell.extents.x - edgeBuffer);
+            float botX = Random.Range(centerBuffer, m_Cell.extents.x - edgeBuffer);
+            float topZ = Random.Range(centerBuffer, m_Cell.extents.z - edgeBuffer);
+            float botZ = Random.Range(centerBuffer, m_Cell.extents.z - edgeBuffer);
+
+            Vector3 size = new Vector3(topX + botX, m_Cell.size.y, topZ + botZ);
+            Vector3 center = new Vector3(m_Cell.center.x + (topX - botX) / 2, m_Cell.center.y, m_Cell.center.z + (topZ - botZ) / 2);
+
+            m_Room = new Bounds(center, size);
 
 #endif
 
@@ -179,17 +198,64 @@ namespace AfGD.Assignment3
         //      Otherwise you do not have anything to raycast against.
         void ConnectChildRooms()
         {
+            float HallwayWidth = 1f;
+
             // Connect m_ChildA & m_ChildB
             // example of algorithm to connect the child nodes:
             // 1) Find interval where the RoomBounds of the children overlap on the plane perpendicular to the split axis of *this* node
+            float AMin = m_SplitAxis == Axis.X ? (m_ChildA.m_Room.center.x - m_ChildA.m_Room.extents.x) : (m_ChildA.m_Room.center.z - m_ChildA.m_Room.extents.z);
+            float AMax = m_SplitAxis == Axis.X ? (m_ChildA.m_Room.center.x + m_ChildA.m_Room.extents.x) : (m_ChildA.m_Room.center.z + m_ChildA.m_Room.extents.z);
+            float BMin = m_SplitAxis == Axis.X ? (m_ChildB.m_Room.center.x - m_ChildB.m_Room.extents.x) : (m_ChildB.m_Room.center.z - m_ChildB.m_Room.extents.z);
+            float BMax = m_SplitAxis == Axis.X ? (m_ChildB.m_Room.center.x + m_ChildB.m_Room.extents.x) : (m_ChildB.m_Room.center.z + m_ChildB.m_Room.extents.z);
+
+            float min = Mathf.Max(AMin, BMin);
+            float max = Mathf.Min(AMax, BMax);
+
             // 2) Sanity check if this range exists (should be the case if a room is always at least half the size)
+            if (min + HallwayWidth > max)
+                Debug.LogError("Range does not exist.");
+
             // 3) Pick a point on this interval where the corridor will be placed (this is only 1 coordinate)
-            // 4) Find a coordinate on the split axis that is inbetween the RoomBounds of both children 
+            float point = Random.Range(min + HallwayWidth / 2, max - HallwayWidth / 2);
+
+            // 4) Find a coordinate on the split axis that is inbetween the RoomBounds of both children
             //    (the second coordinate, now we have a point between the two child nodes we want to connect)
+            Vector3 castPoint = new Vector3(m_SplitAxis == Axis.X ? point : m_Cell.center.x, m_Cell.center.y, m_SplitAxis == Axis.Z ? point : m_Cell.center.z);
+
+            /*
+            // Spawn Mesh that represents castPoint
+            GameObject castpoint = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            castpoint.transform.position = castPoint;
+            castpoint.transform.localScale = new Vector3(1.1f, 1.1f, 1.1f);
+            castpoint.GetComponent<MeshRenderer>().material.color = Color.red;
+            castpoint.name = "CastPoint";
+            */
+
             // 5) RayCast from the found point along the split axis in both directions 
             //    (this should give you the coordinates where the hallway connect to the room 
             //        (or another hallway if the connecting child node has child nodes itself))
+            Vector3 direction = new Vector3(m_SplitAxis == Axis.Z ? 1 : 0, 0, m_SplitAxis == Axis.X ? 1 : 0);
+            RaycastHit hit;
+            bool hitSuccess = Physics.Raycast(castPoint, direction, out hit);
+            RaycastHit hitInv;
+            bool hitInvSuccess = Physics.Raycast(castPoint, -direction, out hitInv);
+            if (!hitSuccess || !hitInvSuccess)
+                Debug.LogError("Raycast missed");
+
+            Vector3 length = hit.point - hitInv.point;
+            Vector3 centerFirstAxis = length / 2 + hitInv.point;
+
+            Vector3 size = new Vector3(m_SplitAxis == Axis.Z ? length.x : HallwayWidth, HallwayWidth, m_SplitAxis == Axis.X ? length.z : HallwayWidth);
+            Vector3 center = new Vector3(m_SplitAxis == Axis.X ? castPoint.x : centerFirstAxis.x, m_Cell.center.y, m_SplitAxis == Axis.Z ? castPoint.z : centerFirstAxis.z);
+
             // 6) Create a Cube that represents the hallway (i.e. GameObject.CreatePrimitive(PrimitiveType.Cube);)
+            // Spawn Mesh that represents hallway
+            GameObject hallway = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            hallway.transform.position = center;
+            hallway.transform.localScale = size; //new Vector3(1f, 1f, 1f);
+            hallway.GetComponent<MeshRenderer>().material.color = Color.white;
+            hallway.name = "Hallway";
+
 #if SOLUTION_3_3
 
 #endif
