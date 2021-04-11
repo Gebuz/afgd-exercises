@@ -34,8 +34,9 @@ namespace AfGD.Assignment2
 
         private void RotateLink(int i)
         {
-            joints[i].rotation = Quaternion.LookRotation(joints[i + 1].position - joints[i].position, Vector3.up);
-            joints[i].Rotate(new Vector3(0, -90, 0), Space.Self);
+            //joints[i].rotation = Quaternion.LookRotation(joints[i + 1].position - joints[i].position, Vector3.up);
+            //joints[i].Rotate(new Vector3(0, -90, 0), Space.Self);
+            joints[i].right = joints[i + 1].position - joints[i].position;
         }
 
         private Vector3 JointLimit(Vector3 pp, Vector3 p, Vector3 pn)
@@ -51,10 +52,9 @@ namespace AfGD.Assignment2
             if (Vector3.Dot(o, l) < 0 && rotationLimit < 90)
             { // if the angle(l, ln) > 90 degrees reflect (unless limit is also above 90)
                 o = -o;
-                ln = Vector3.Reflect(ln, l);
             }
             Vector3 po = p + o;
-            Vector3 d = pn - po / (pn - po).magnitude;
+            Vector3 d = (pn - po) / (pn - po).magnitude;
             float r = Mathf.Abs(o.magnitude * Mathf.Tan(t));
             return po + r * d;
         }
